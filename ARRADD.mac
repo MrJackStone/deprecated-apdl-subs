@@ -1,0 +1,4 @@
+!! DEPRECATED: use ARRPUT or ARRJOIN instead                                                      !!
+
+*msg,fatal
+FATAL ERROR: ARRADD macro has been DEPRECATED.

@@ -1,0 +1,4 @@
+!! DEPRECATED: use ARRJOIN and ARRPUT instead.                                                    !!
+
+*msg,fatal
+FATAL ERROR: ARRCONCAT macro has been DEPRECATED.

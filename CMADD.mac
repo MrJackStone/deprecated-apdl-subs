@@ -1,0 +1,4 @@
+!! DEPRECATED: use CMPADD instead.                                                                !!
+
+*msg,fatal
+FATAL ERROR: CMADD macro has been DEPRECATED.
