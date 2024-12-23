@@ -1,0 +1,69 @@
+*msg,fatal
+FATAL ERROR: BEAMENVPEAK macro has been DEPRECATED.
+
+/eof
+
+! BEAMENVPEAK
+! Bending moment MY
+/show
+PLETAB,B_MY_MAX,NOAV
+*get,MYMax,PLNSOL,,MAX
+/show
+PLETAB,B_MY_MIN,NOAV
+*get,MYMin,PLNSOL,,MIN
+! Bending moment MZ
+/show
+PLETAB,B_MZ_MAX,NOAV
+*get,MZMax,PLNSOL,,MAX
+/show
+PLETAB,B_MZ_MIN,NOAV
+*get,MZMin,PLNSOL,,MIN
+! Axial force FX
+/show
+PLETAB,B_FX_MAX,NOAV
+*get,FXMax,PLNSOL,,MAX
+/show
+PLETAB,B_FX_MIN,NOAV
+*get,FXMin,PLNSOL,,MIN
+! Shear force QZ
+/show
+PLETAB,B_QZ_MAX,NOAV
+*get,QZMax,PLNSOL,,MAX
+/show
+PLETAB,B_QZ_MIN,NOAV
+*get,QZMin,PLNSOL,,MIN
+! Shear force QY
+/show
+PLETAB,B_QY_MAX,NOAV
+*get,QYMax,PLNSOL,,MAX
+/show
+PLETAB,B_QY_MIN,NOAV
+*get,QYMin,PLNSOL,,MIN
+! Torsion MT
+/show
+PLETAB,B_MT_MAX,NOAV
+*get,MTMax,PLNSOL,,MAX
+/show
+PLETAB,B_MT_MIN,NOAV
+*get,MTMin,PLNSOL,,MIN
+! Vertical deflection UX
+/show
+PLETAB,B_UX_MAX,NOAV
+*get,UXMax,PLNSOL,,MAX
+/show
+PLETAB,B_UX_MIN,NOAV
+*get,UXMin,PLNSOL,,MIN
+! Vertical deflection UY
+/show
+PLETAB,B_UY_MAX,NOAV
+*get,UYMax,PLNSOL,,MAX
+/show
+PLETAB,B_UY_MIN,NOAV
+*get,UYMin,PLNSOL,,MIN
+! Vertical deflection UZ
+/show
+PLETAB,B_UZ_MAX,NOAV
+*get,UZMax,PLNSOL,,MAX
+/show
+PLETAB,B_UZ_MIN,NOAV
+*get,UZMin,PLNSOL,,MIN

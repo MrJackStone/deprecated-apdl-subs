@@ -1,0 +1,17 @@
+*msg,fatal
+FATAL ERROR: BITWISE macro has been DEPRECATED.
+
+/eof
+
+! BITWISE, number
+! BITWISE,   arg1
+
+AR20=arg1
+*del,BITWISE_ARR_bits,,nopr
+
+*dowhile,AR20
+    AR21=MOD(AR20,2)
+    AR20=NINT((AR20/2)-0.5)
+    APPND,'BITWISE_ARR_bits',AR21
+*enddo
+
