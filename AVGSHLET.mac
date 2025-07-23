@@ -1,0 +1,252 @@
+*msg,fatal
+FATAL ERROR: AVGSHLET macro has been DEPRECATED. Use ETBCVL instead.
+
+/eof
+
+! AVGSHLET, avgDirection, bandWidth, etable1, etable2, etable3, etable4, etable4, etable6
+! AVGSHLET,         arg1,      arg2,    arg3,    arg4,    arg5,    arg6,    arg7,    arg8
+
+! Descrição:
+! Esta subrotina gera Element Tables customizadas a partir da aplicação da operação de média
+! móvel a uma Element Table existente. A média pode ser feita agregando valores em faixas de
+! larguras definidas ao longo das direções X ou Y.
+
+! Lista de argumentos:
+! arg1: avgDirection  -  direção ao longo da qual a média será tomada ('X' ou 'Y');
+! arg2: bandWidth     -  largura da faixa para cálculo da média móvel;
+! arg3: etable1       -  rótulo da primeira Element Table existente a servir de base;
+! arg4: etable2       -  rótulo da segunda Element Table existente a servir de base;
+! arg5: etable3       -  rótulo da terceira Element Table existente a servir de base;
+! arg6: etable4       -  rótulo da quarta Element Table existente a servir de base;
+! arg7: etable5       -  rótulo da quinta Element Table existente a servir de base;
+! arg8: etable6       -  rótulo da sexta Element Table existente a servir de base;
+
+! Lista de variáveis locais:
+! AR20: directionKey
+! AR21: ET1index
+! AR22: ET2index
+! AR23: ET3index
+! AR24: ET4index
+! AR25: ET5index
+! AR26: ET6index
+! AR27: parType
+! AR28: ECount
+! AR29: nthElem
+! AR30: ENum
+! AR31: xMin
+! AR32: xMax
+! AR33: yMin
+! AR34: yMax
+! AR35: yLowerBound
+! AR36: yUpperBound
+! AR37: xLowerBound
+! AR38: xUpperBound
+! AR39: nECount
+! AR40: elemNum
+! AR41: etab1Sum
+! AR42: etab2Sum
+! AR43: etab3Sum
+! AR44: etab4Sum
+! AR45: etab5Sum
+! AR46: etab6Sum
+! AR47: nthNeighbor
+! AR51: ETab1Val
+! AR52: ETab2Val
+! AR53: ETab3Val
+! AR54: ETab4Val
+! AR55: ETab5Val
+! AR56: ETab6Val
+! AR61: ETab1Avg
+! AR62: ETab2Avg
+! AR63: ETab3Avg
+! AR64: ETab4Avg
+! AR65: ETab5Avg
+! AR66: ETab6Avg
+
+! Lista de variáveis globais (apagadas ao final da subrotina):
+! AVGSHLET_COMPN_temp
+! AVGSHLET_COMPE_temp
+! AVSH_tmp
+
+! Lista de variáveis de saída:
+! AVSH_SX  (Element Table)
+! AVSH_SY  (Element Table)
+! AVSH_SZ  (Element Table)
+! AVSH_SXY (Element Table)
+! AVSH_SYZ (Element Table)
+! AVSH_SXZ (Element Table)
+
+! Definir direção de agregamento dos resultados
+AR20=UPCASE(arg1)
+*if,AR20,NE,'X',AND,AR20,NE,'Y',THEN
+   AR20=X
+*endif
+
+! Obter índices das Element Tables
+*get,AR27,PARM,arg3,TYPE
+*if,AR27,EQ,3,THEN
+   ETINDEX,arg3
+   *if,_OUTPUT,GT,0,THEN
+      AR21=arg3
+   *else
+      AR21='-'
+   *endif
+*else
+   AR21='-'
+*endif
+*get,AR27,PARM,arg4,TYPE
+*if,AR27,EQ,3,THEN
+   ETINDEX,arg4
+   *if,_OUTPUT,GT,0,THEN
+      AR22=arg4
+   *else
+      AR22='-'
+   *endif
+*else
+   AR22='-'
+*endif
+*get,AR27,PARM,arg5,TYPE
+*if,AR27,EQ,3,THEN
+   ETINDEX,arg5
+   *if,_OUTPUT,GT,0,THEN
+      AR23=arg5
+   *else
+      AR23='-'
+   *endif
+*else
+   AR23='-'
+*endif
+*get,AR27,PARM,arg6,TYPE
+*if,AR27,EQ,3,THEN
+   ETINDEX,arg6
+   *if,_OUTPUT,GT,0,THEN
+      AR24=arg6
+   *else
+      AR24='-'
+   *endif
+*else
+   AR24='-'
+*endif
+*get,AR27,PARM,arg7,TYPE
+*if,AR27,EQ,3,THEN
+   ETINDEX,arg7
+   *if,_OUTPUT,GT,0,THEN
+      AR25=arg7
+   *else
+      AR25='-'
+   *endif
+*else
+   AR25='-'
+*endif
+*get,AR27,PARM,arg8,TYPE
+*if,AR27,EQ,3,THEN
+   ETINDEX,arg8
+   *if,_OUTPUT,GT,0,THEN
+      AR26=arg8
+   *else
+      AR26='-'
+   *endif
+*else
+   AR26='-'
+*endif
+
+! Criar componentes temporários
+CM,AVGSHLET_COMPE_temp,ELEM
+CM,AVGSHLET_COMPN_temp,NODE
+*get,AR28,ELEM,,COUNT
+
+! Inicializar Element Tables
+ETABLE,AVSH_SX,S,X
+ETABLE,AVSH_SY,S,Y
+ETABLE,AVSH_SZ,S,Z
+ETABLE,AVSH_SXY,S,XY
+ETABLE,AVSH_SYZ,S,YZ
+ETABLE,AVSH_SXZ,S,XZ
+
+AR30=0
+*do,AR29,1,AR28,1
+   ! Reverter à seleção inicial
+   CMSEL,S,AVGSHLET_COMPE_temp
+   CMSEL,S,AVGSHLET_COMPN_temp
+   ! Obter coordenadas dos nós do enésimo elemento
+   AR30=ELNEXT(AR30)
+   ESEL,S,ELEM,,AR30
+   NSLE,S,ACTIVE
+   *get,AR31,NODE,,MNLOC,X
+   *get,AR32,NODE,,MXLOC,X
+   *get,AR33,NODE,,MNLOC,Y
+   *get,AR34,NODE,,MXLOC,Y
+   ! Calcular limites da largura de faixa para o enésimo elemento
+   AR35=AR33-(arg2/2)
+   AR36=AR34+(arg2/2)
+   AR37=AR31-(arg2/2)
+   AR38=AR32+(arg2/2)
+   ! Selecionar elementos na largura de faixa do enésimo elemento
+   CMSEL,S,AVGSHLET_COMPN_temp
+   *if,AR20,EQ,'X',THEN
+      NSEL,R,LOC,X,AR37,AR38
+      NSEL,R,LOC,Y,AR33,AR34
+   *elseif,AR20,EQ,'Y',THEN
+      NSEL,R,LOC,Y,AR35,AR36
+      NSEL,R,LOC,X,AR31,AR32
+   *endif
+   ESLN,S,1
+   *get,AR39,ELEM,,COUNT
+   AR40=0
+   ! Inicializar somas dos valores das Element Tables
+   AR41=0
+   AR42=0
+   AR43=0
+   AR44=0
+   AR45=0
+   AR46=0
+   *do,AR47,1,AR39,1
+      ! Obter número do enésimo elemento
+      AR40=ELNEXT(AR40)
+      ! Obter valores das Element Tables
+      *if,AR21,NE,'-',THEN
+         *get,AR51,ELEM,AR40,ETAB,AR21
+         AR41=AR41+AR51
+      *endif
+      *if,AR22,NE,'-',THEN
+         *get,AR52,ELEM,AR40,ETAB,AR22
+         AR42=AR42+AR52
+      *endif
+      *if,AR23,NE,'-',THEN
+         *get,AR53,ELEM,AR40,ETAB,AR23
+         AR43=AR43+AR53
+      *endif
+      *if,AR24,NE,'-',THEN
+         *get,AR54,ELEM,AR40,ETAB,AR24
+         AR44=AR44+AR54
+      *endif
+      *if,AR25,NE,'-',THEN
+         *get,AR55,ELEM,AR40,ETAB,AR25
+         AR45=AR45+AR55
+      *endif
+      *if,AR26,NE,'-',THEN
+         *get,AR56,ELEM,AR40,ETAB,AR26
+         AR46=AR46+AR56
+      *endif
+   *enddo
+   ! Calcular médias
+   AR61=AR41/AR39
+   AR62=AR42/AR39
+   AR63=AR43/AR39
+   AR64=AR44/AR39
+   AR65=AR45/AR39
+   AR66=AR46/AR39
+   ! Atribuir valores às Element Tables customizadas
+   DETAB,AR30,AVSH_SX,AR61
+   DETAB,AR30,AVSH_SY,AR62
+   DETAB,AR30,AVSH_SZ,AR63
+   DETAB,AR30,AVSH_SXY,AR64
+   DETAB,AR30,AVSH_SYZ,AR65
+   DETAB,AR30,AVSH_SXZ,AR66
+*enddo
+
+! Reverter à seleção inicial
+CMSEL,S,AVGSHLET_COMPN_temp
+CMSEL,S,AVGSHLET_COMPE_temp
+CMDELE,AVGSHLET_COMPN_temp
+CMDELE,AVGSHLET_COMPE_temp

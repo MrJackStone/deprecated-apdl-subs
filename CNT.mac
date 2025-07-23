@@ -1,0 +1,73 @@
+*msg,fatal
+FATAL ERROR: CNT macro has been DEPRECATED.
+
+/eof
+
+! CNT, targetCM, contactCM, targetType, contactType, contactSurface, friction, contactAlgorithm
+! CNT,      arg1,     arg2,       arg3,        arg4,           arg5,     arg6,             arg7
+
+! AR20: RCMaxD
+! AR21: ETMaxD
+! AR22: REAL_CONTA
+! AR23: TYPE_CONTA
+! AR24: TYPE_TARGE
+! AR25: MTMaxD
+! AR26: MAT_PAIR
+
+*get,AR20,RCON,,NUM,MAX
+*get,AR21,ETYP,,NUM,MAX
+*get,AR25,MAT,,NUM,MAX
+AR22=AR20+1
+AR23=AR21+1
+AR24=AR21+2
+AR26=AR25+1
+
+! R, #, R1, R2, FKN, FTOLN, ICONT, PINB
+R, AR22,,,1,1,0,
+! RMORE, PMAX, PMIN, TAUMAX, CNOF, FKOP, FKT
+RMORE,,,1E20,0,1,
+! RMORE, COHE, TCC, FHTG, SBCT, RDVF, FWGT
+RMORE,0,,,,,
+! RMORE, ECC, FHEG, FACT, DC, SLTO, TNOP
+RMORE,,,1,0,,1
+! RMORE, TOLS, MCC, PPCN, FPAT, COR, STRM
+RMORE,10,,,,,
+! RMORE, FDMN, FDMT, FDMD, FDMS, TBND
+RMORE,,,,,
+
+MP,MU,AR26,arg6
+
+ET,AR24,arg3
+KEYOPT,AR24,5,0  ! Internal DOFs for MPC:  [0] Automatic constraint type detection
+
+ET,AR23,arg4
+KEYOPT,AR23,1,0     ! Degrees of freedom:     [0] UX, UY, UZ
+KEYOPT,AR23,2,arg7  ! Contact algorithm:      [0] Augmented Lagrangian (default)
+KEYOPT,AR23,4,2     ! Location detection:     [2] On nodal point - normal to target surface
+KEYOPT,AR23,5,1     ! Closure/offset:         [3] Close gap/reduce penetration with auto CNOF
+KEYOPT,AR23,6,0     ! Stiffness variation:    [0] Use default range for updating
+KEYOPT,AR23,7,0     ! Incrementation:         [0] No control
+KEYOPT,AR23,8,0     ! Asymmetric contact:     [0] No action
+KEYOPT,AR23,9,1     ! Initial gap:            [1] Exclude both penetration and gap
+KEYOPT,AR23,10,2    ! Stiffness update:       [2] Each iteration
+KEYOPT,AR23,11,0    ! Shell thickness effect: [0] Exclude
+KEYOPT,AR23,12,arg5 ! Contact surface:        [0] Standard
+
+REAL,AR22
+MAT,AR26
+
+CMSEL,S,%arg2%
+ESLN,S,0 !! 1
+nsle,s !!
+TYPE,AR23
+ESURF
+
+CMSEL,S,%arg1%
+ESLN,S,0 !! 1
+nsle,s !!
+TYPE,AR24
+ESURF
+
+
+
+

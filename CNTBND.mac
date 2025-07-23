@@ -1,0 +1,86 @@
+! CNTBND, contEntType, targEntType
+! CNTBND,        arg1,        arg2
+
+*get,RCMaxD,RCON,,NUM,MAX
+*get,ETMaxD,ETYP,,NUM,MAX
+REAL_CONTA174=RCMaxD+1
+TYPE_CONTA174=ETMaxD+1
+TYPE_TARGE170=ETMaxD+2
+
+! R, #, R1, R2, FKN, FTOLN, ICONT, PINB
+R, REAL_CONTA174,,,1,1,0,
+! RMORE, PMAX, PMIN, TAUMAX, CNOF, FKOP, FKT
+RMORE,,,1E20,0,1,
+! RMORE, COHE, TCC, FHTG, SBCT, RDVF, FWGT
+RMORE,0,,,,,
+! RMORE, ECC, FHEG, FACT, DC, SLTO, TNOP
+RMORE,,,1,0,,1
+! RMORE, TOLS, MCC, PPCN, FPAT, COR, STRM
+RMORE,10,,,,,
+! RMORE, FDMN, FDMT, FDMD, FDMS, TBND
+RMORE,,,,,
+
+ET,TYPE_TARGE170,170
+KEYOPT,TYPE_TARGE170,5,0  ! Internal DOFs for MPC:  [0] Automatic constraint type detection
+KEYOPT,TYPE_TARGE170,4,000111  ! Internal DOFs for MPC:  [0] Automatic constraint type detection
+!KEYOPT,TYPE_TARGE170,2,1
+
+ET,TYPE_CONTA174,174
+KEYOPT,TYPE_CONTA174,1,0  ! Degrees of freedom:     [0] UX, UY, UZ
+KEYOPT,TYPE_CONTA174,2,2  ! Contact algorithm:      [2] MPC
+KEYOPT,TYPE_CONTA174,4,1!2  ! Location detection:     [2] On nodal point - normal to target surface
+KEYOPT,TYPE_CONTA174,5,0  ! Closure/offset:         [0] No automated adjustment
+KEYOPT,TYPE_CONTA174,6,0  ! Stiffness variation:    [0] Use default range for updating
+KEYOPT,TYPE_CONTA174,7,0  ! Incrementation:         [0] No control
+KEYOPT,TYPE_CONTA174,8,0  ! Asymmetric contact:     [0] No action
+KEYOPT,TYPE_CONTA174,9,1  ! Initial gap:            [1] Exclude both penetration and gap
+KEYOPT,TYPE_CONTA174,10,2!0 ! Stiffness update:       [0] Each load step    !! --- original: 2 (every iteration)
+KEYOPT,TYPE_CONTA174,11,0 ! Shell thickness effect: [0] Exclude
+KEYOPT,TYPE_CONTA174,12,5 ! Contact surface:        [5] Bonded (always)
+
+REAL,REAL_CONTA174
+
+*if,arg1,EQ,'L',THEN
+    CMSEL,S,COMPL_contact
+    ESLL,S
+*elseif,arg1,EQ,'A',THEN
+    CMSEL,S,COMPA_contact
+    ESLA,S
+*elseif,arg1,EQ,'V',THEN
+    CMSEL,S,COMPV_contact
+    ESLV,S
+*elseif,arg1,EQ,'E',THEN
+    CMSEL,S,COMPE_contact
+*endif
+NSLE,S,ACTIVE
+TYPE,TYPE_CONTA174
+ESURF
+
+*if,arg2,EQ,'L',THEN
+    CMSEL,S,COMPL_target
+    ESLL,S
+*elseif,arg2,EQ,'A',THEN
+    CMSEL,S,COMPA_target
+    ESLA,S
+*elseif,arg2,EQ,'V',THEN
+    CMSEL,S,COMPV_target
+    ESLV,S
+*elseif,arg2,EQ,'E',THEN
+    CMSEL,S,COMPE_target
+*endif
+NSLE,S,ACTIVE
+TYPE,TYPE_TARGE170
+ESURF
+
+
+!CMSEL,S,COMPA_target
+!ESLA,S
+!NSLE,S,ACTIVE
+!TYPE,TYPE_TARGE170
+!ESURF
+!
+!CMSEL,S,COMPA_contact
+!ESLA,S
+!NSLE,S,ACTIVE
+!TYPE,TYPE_CONTA174
+!ESURF
