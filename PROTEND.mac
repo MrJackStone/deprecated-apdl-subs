@@ -1,0 +1,268 @@
+*msg,fatal
+FATAL ERROR: PROTEND macro has been DEPRECATED.
+
+/eof
+
+! L,a,b,yReinf,zReinf,ElemSize
+
+L=1
+a=0.3
+b=0.3
+yReinf=0.25
+zReinf=0.15
+ElemSize=0.05
+
+fck=50e6
+vc=0.2
+pc=2500
+
+Es=2e11
+fy=500e6
+vs=0.3
+ps=7850
+
+SubstepCount=100
+
+PretenForce=100e3
+VertLoad=30e3
+
+/prep7
+
+x0=0
+y0=0
+z0=0
+
+! Definições dos elementos
+TYPE_SOLID=1
+TYPE_BEAM=2
+TYPE_SHELL=3
+TYPE_LINK=4
+!TYPE_SOLID_num=185
+TYPE_SOLID_num=65
+TYPE_BEAM_num=188
+TYPE_SHELL_num=181
+TYPE_LINK_num=180
+
+SEC_Rebar=1
+SEC_Rebar_diam=10e-3
+
+REAL_Concreto=1
+REAL_Rebar=2
+!!
+
+! Definições dos materiais
+! Concreto
+Ec=4760*SQRT(fck/1e6)*1e6
+MAT_Concreto_fctm=0.3*SQRT(fck/1e6)*1e6
+fc5=fck
+fc1=0.3*fc5
+epsilon0=2*fc5/Ec
+epsilon1=fc1/Ec
+deltaEpsilon=(epsilon0-epsilon1)/4
+epsilon2=epsilon1+deltaEpsilon
+epsilon3=epsilon2+deltaEpsilon
+epsilon4=epsilon3+deltaEpsilon
+fc2=(Ec*epsilon2)/(1+((epsilon2/epsilon0)**2))
+fc3=(Ec*epsilon3)/(1+((epsilon3/epsilon0)**2))
+fc4=(Ec*epsilon4)/(1+((epsilon4/epsilon0)**2))
+MAT_Concreto=1
+MAT_Concreto_E=Ec
+MAT_Concreto_fck=fck
+MAT_Concreto_dens=pc
+MAT_Concreto_Poisson=vc
+MAT_Concreto_ptCount=5
+*del,MAT_Concreto_sigma,,nopr
+*dim,MAT_Concreto_sigma,ARRAY,MAT_Concreto_ptCount
+MAT_Concreto_sigma(1)=fc1,fc2,fc3,fc4,fc5
+*del,MAT_Concreto_epsilon,,nopr
+*dim,MAT_Concreto_epsilon,ARRAY,MAT_Concreto_ptCount
+MAT_Concreto_epsilon(1)=epsilon1,epsilon2,epsilon3,epsilon4,epsilon0
+! Aço
+MAT_Rebar=2
+MAT_Rebar_E=Es
+MAT_Rebar_Poisson=vs
+MAT_Rebar_dens=ps
+MAT_Rebar_fy=fy
+
+
+!! ELEMENT TYPE, MATERIALS, SECTIONS, REAL CONSTANTS
+ET,TYPE_SOLID,TYPE_SOLID_num
+ET,TYPE_BEAM,TYPE_BEAM_num
+ET,TYPE_SHELL,TYPE_SHELL_num
+ET,TYPE_LINK,TYPE_LINK_num
+
+! Definir materiais
+MPTEMP
+MPTEMP,MAT_Concreto,0
+MP,EX,MAT_Concreto,MAT_Concreto_E
+MP,PRXY,MAT_Concreto,MAT_Concreto_Poisson
+MP,DENS,MAT_Concreto,MAT_Concreto_dens
+TB,CONCR,MAT_Concreto,1,9
+TBTEMP,0
+TBDATA,,0.3,0.8,MAT_Concreto_fctm,-1
+TBDATA
+TB,MISO,MAT_Concreto,,MAT_Concreto_ptCount
+TBTEMP,0
+*do,nthPt,1,MAT_Concreto_ptCount,1
+   strain=MAT_Concreto_epsilon(nthPt)
+   stress=MAT_Concreto_sigma(nthPt)
+   TBPT,DEFI,strain,stress
+*enddo
+MP,EX,MAT_Rebar,MAT_Rebar_E
+MP,PRXY,MAT_Rebar,MAT_Rebar_Poisson
+MP,DENS,MAT_Rebar,MAT_Rebar_dens
+TB,BISO,MAT_Rebar,,2
+TBDATA,,MAT_Rebar_fy
+
+! Definir seções transversais
+R,REAL_Concreto,0,0,0,0,0,0
+SECTYPE,SEC_Rebar,BEAM,CSOLID,'REBAR'
+SECDATA,SEC_Rebar_diam/2
+rebarArea=3.1416*(SEC_Rebar_diam**2)/4
+R,REAL_Rebar,rebarArea
+
+!! SOLID MODEL
+*get,KMax,KP,,NUM,MAXD
+KP1=KMax+1
+KP2=KMax+2
+KP3=KMax+3
+KP4=KMax+4
+
+K,KP1,x0,y0,z0
+K,KP2,x0,y0,z0+b
+K,KP3,x0,y0+a,z0+b
+K,KP4,x0,y0+a,z0
+
+A,KP1,KP2,KP3,KP4
+
+SLICEXY,zReinf,x0-L,y0-a,x0+2*L,y0+2*a  ! TODO  deprecated, replace
+SLICEXZ,yReinf,x0-L,z0-b,x0+2*L,z0+2*b  ! TODO  deprecated, replace
+
+*get,AMin,AREA,,NUM,MIN
+*get,L1,AREA,AMin,LOOP,1,LINE,1
+*get,L2,AREA,AMin,LOOP,1,LINE,2
+*get,L3,AREA,AMin,LOOP,1,LINE,3
+*get,K11,LINE,L1,KP,1
+*get,K21,LINE,L2,KP,1
+*get,K31,LINE,L3,KP,1
+*get,K12,LINE,L1,KP,2
+*get,K22,LINE,L2,KP,2
+*get,K32,LINE,L3,KP,2
+K1=K11
+*if,K1,EQ,K21,THEN
+   K2=K22
+*else
+   K2=K21
+*endif
+*if,K1,EQ,K31,OR,K2,EQ,K31,THEN
+   K3=K32
+*else
+   K3=K31
+*endif
+XNorm=NORMKX(K1,K2,K3)
+*if,XNorm,LT,0,THEN
+   AREVERSE,AMin
+*endif
+ALLSEL
+ANORM,AMin
+
+ALLSEL
+*get,AMax,AREA,,NUM,MAXD
+NUMSTR,AREA,AMax+1
+*get,ACount,AREA,,COUNT
+ANum=0
+*do,nthArea,1,ACount,1
+   ANum=ARNEXT(ANum)
+   VOFFST,ANum,L
+*enddo
+
+NUMMRG,KP
+
+LSEL,S,LOC,Y,yReinf
+LSEL,R,LOC,Z,zReinf
+CM,COMPL_Rebar,LINE
+
+!! FINITE ELEMENT MODEL
+ALLSEL
+VATT,MAT_Concreto,,TYPE_SOLID
+ESIZE,ElemSize
+
+MSHKEY,1
+MSHAPE,0,3d
+VMESH,ALL
+
+ALLSEL
+VIEW4W
+EPLOT
+
+REAL,REAL_Rebar
+TYPE,TYPE_LINK
+MAT,MAT_Rebar
+
+CMSEL,S,COMPL_Rebar
+NSLL,S,1
+CM,COMPN_Rebar,NODE
+*get,NodeCount,NODE,,COUNT
+NSEL,R,LOC,X,x0
+*get,PrevNode,NODE,,NUM,MIN
+CM,COMPN_ProcessedNodes,NODE
+*do,nthNode,1,NodeCount-1,1
+   NSEL,S,NODE,,PrevNode
+   ESLN,S,0
+   NSLE,S
+   CMSEL,R,COMPN_Rebar
+   CMSEL,U,COMPN_ProcessedNodes
+   *get,ThisNode,NODE,,NUM,MIN
+   NSEL,A,NODE,,PrevNode
+   E,PrevNode,ThisNode
+   CMSEL,A,COMPN_ProcessedNodes
+   CM,COMPN_ProcessedNodes,NODE
+   PrevNode=ThisNode
+*enddo
+
+ALLSEL
+
+!! APOIOS E CARGAS
+/solu
+
+ALLSEL
+NSEL,S,LOC,X,x0
+D,ALL,UX,0,,,,UY,UZ
+CMSEL,S,COMPN_Rebar
+*get,NodeCount,NODE,,COUNT
+NodalForce1=PretenForce/NodeCount
+F,ALL,FX,-NodalForce1
+ALLSEL
+ANTYPE,0
+OUTRES,ERASE
+OUTRES,ALL,ALL
+NSUBST,SubstepCount,2*SubstepCount
+NLGEOM,ON
+NROPT,FULL
+LSWRITE,1
+
+ALLSEL
+!FDELE,ALL
+!DDELE,ALL
+!NSEL,S,LOC,X,x0
+!D,ALL,UX,0,,,,UY,UZ
+NSEL,S,LOC,X,x0+L
+*get,NodeCount,NODE,,COUNT
+NodalForce2=VertLoad/NodeCount
+F,ALL,FY,-NodalForce2
+ALLSEL
+ANTYPE,0
+OUTRES,ERASE
+OUTRES,ALL,ALL
+NSUBST,SubstepCount,2*SubstepCount
+NLGEOM,ON
+NROPT,FULL
+LSWRITE,2
+
+!! SOLUCIONAR
+ALLSEL
+NSUBST,SubstepCount,2*SubstepCount
+LSSOLVE,1,2
+
+
+

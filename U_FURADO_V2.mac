@@ -1,0 +1,544 @@
+*msg,fatal
+FATAL ERROR: U_FURADO macro has been DEPRECATED.
+
+/eof
+
+!!                                                                                                !!
+!! 2. PARÂMETROS COMPLEMENTARES                                                                   !!
+!!                                                                                                !!
+! Posição da origem
+x0=0
+y0=0
+z0=0
+
+! Correção da altura total
+dt = dt - tw
+! Correção da posição do centro do furo
+hPos = hPos + x0
+
+! Posição do início do furo
+xi = hPos - (hDiam/2)
+! Posição do final do furo
+xf = hPos + (hDiam/2)
+
+! Contorno do modelo
+xMin=x0
+xMax=x0+L
+yMin=y0
+yMax=y0+dt
+yMid=(yMax+yMin)/2
+zMin=z0
+zMax=z0+bf
+
+! Número dos keypoints
+KP1=1
+KP2=2
+KP3=3
+KP4=4
+KP5=5
+KP6=6
+KP7=7
+KP8=8
+KP9=9
+KP10=10
+KP11=11
+KP12=12
+
+! Número do elemento
+TYPE_Plate = 1
+
+! Número do material
+MAT_Steel = 1
+
+! Número da seção transversal
+SEC_Plate = 1
+
+! Calcular dimensão do elemento
+*if,meshSize,EQ,0,THEN
+   ! Caso: malha grossa
+   par1=dt/10
+   par2=(dt-hDiam)/4
+   par3=L/80
+*elseif,meshSize,EQ,1,THEN
+   ! Caso: malha intermediária
+   par1=dt/30
+   par2=(dt-hDiam)/10
+   par3=L/200
+*elseif,meshSize,EQ,2,THEN
+   ! Caso: malha fina
+   par1=dt/60
+   par2=(dt-hDiam)/20
+   par3=L/400
+*endif
+! Escolher menor dos valores
+*del,parArray
+*dim,parArray,ARRAY,3
+parArray(1)=par1,par2,par3
+*vscfun,ElementSize,MIN,parArray
+*if,ElementSize,LT,MinESize,THEN
+   ElementSize=MinESize
+*endif
+
+! Aceleração da gravidade
+gAcel=9.81*gMult
+
+! Multiplicadores do método arc-length
+MaxArcMult=1
+MinArcMult=0.1
+
+
+
+!!                                                                                                !!
+!! 3. PRÉ-PROCESSO                                                                                !!
+!!                                                                                                !!
+/prep7
+
+!! 3.1  ELEMENTOS/MATERIAIS/SEÇÕES                                                                !!
+! Tolerância de seleção
+SELTOL,1e-8
+
+! Definição do tipo de elemento
+ET,TYPE_Plate,181
+
+! Definições do material (bilinear sem endurecimento)
+MP,EX,MAT_Steel,MAT_Steel_EX
+MP,PRXY,MAT_Steel,MAT_Steel_Poisson
+MP,DENS,MAT_Steel,MAT_Steel_dens
+TB,BISO,MAT_Steel,,2
+TBDATA,,MAT_Steel_fy
+
+! Definição da seção transversal
+SECTYPE,SEC_Plate,SHELL
+SECDATA,tw,MAT_Steel,,5
+
+!! 3.2  SOLID MODEL                                                                               !!
+! Perfil U simples:
+*if,sec,EQ,0,THEN
+
+   ! Criação dos keypoints:
+   ! Face inicial
+   K, KP1,  x0,   y0,      z0
+   K, KP2,  x0,   y0,      z0+bf
+   K, KP4,  x0,   y0+dt,   z0
+   K, KP5,  x0,   y0+dt,   z0+bf
+   ! Face final
+   K, KP7,  x0+L, y0,      z0
+   K, KP8,  x0+L, y0,      z0+bf
+   K, KP10, x0+L, y0+dt,   z0
+   K, KP11, x0+L, y0+dt,   z0+bf
+
+   ! Criação das linhas:
+   ! Face inicial
+   L,KP2, KP1
+   *get,L2,LINE,,NUM,MAX
+   L,KP1, KP4
+   *get,L3,LINE,,NUM,MAX
+   L,KP4, KP5
+   *get,L4,LINE,,NUM,MAX
+   ! Face final
+   L,KP8, KP7
+   *get,L7,LINE,,NUM,MAX
+   L,KP7, KP10
+   *get,L8,LINE,,NUM,MAX
+   L,KP10,KP11
+   *get,L9,LINE,,NUM,MAX
+   ! Linhas longitudinais
+   L,KP1,KP7
+   *get,L11,LINE,,NUM,MAX
+   L,KP2,KP8
+   *get,L12,LINE,,NUM,MAX
+   L,KP4,KP10
+   *get,L14,LINE,,NUM,MAX
+   L,KP5,KP11
+   *get,L15,LINE,,NUM,MAX
+
+   ! Criação das áreas:
+   ! Alma
+   AL, L11, L3, L14, L8
+   ! Mesa inferior
+   AL, L11, L2, L12, L7
+   ! Mesa superior
+   AL, L14, L4, L15, L9
+
+! Perfil Ue:
+*elseif,sec,EQ,1,THEN
+
+   ! Criação dos keypoints
+   ! Face inicial
+   K, KP1,  x0,   y0,      z0
+   K, KP2,  x0,   y0,      z0+bf
+   K, KP3,  x0,   y0+e,    z0+bf
+   K, KP4,  x0,   y0+dt,   z0
+   K, KP5,  x0,   y0+dt,   z0+bf
+   K, KP6,  x0,   y0+dt-e, z0+bf
+   ! Face final
+   K, KP7,  x0+L, y0,      z0
+   K, KP8,  x0+L, y0,      z0+bf
+   K, KP9,  x0+L, y0+e,    z0+bf
+   K, KP10, x0+L, y0+dt,   z0
+   K, KP11, x0+L, y0+dt,   z0+bf
+   K, KP12, x0+L, y0+dt-e, z0+bf
+
+   ! Criação das linhas:
+   ! Face inicial
+   L,KP3, KP2
+   *get,L1,LINE,,NUM,MAX
+   L,KP2, KP1
+   *get,L2,LINE,,NUM,MAX
+   L,KP1, KP4
+   *get,L3,LINE,,NUM,MAX
+   L,KP4, KP5
+   *get,L4,LINE,,NUM,MAX
+   L,KP5, KP6
+   *get,L5,LINE,,NUM,MAX
+   ! Face final
+   L,KP9, KP8
+   *get,L6,LINE,,NUM,MAX
+   L,KP8, KP7
+   *get,L7,LINE,,NUM,MAX
+   L,KP7, KP10
+   *get,L8,LINE,,NUM,MAX
+   L,KP10,KP11
+   *get,L9,LINE,,NUM,MAX
+   L,KP11,KP12
+   *get,L10,LINE,,NUM,MAX
+   ! Linhas longitudinais
+   L,KP1,KP7
+   *get,L11,LINE,,NUM,MAX
+   L,KP2,KP8
+   *get,L12,LINE,,NUM,MAX
+   L,KP3,KP9
+   *get,L13,LINE,,NUM,MAX
+   L,KP4,KP10
+   *get,L14,LINE,,NUM,MAX
+   L,KP5,KP11
+   *get,L15,LINE,,NUM,MAX
+   L,KP6,KP12
+   *get,L16,LINE,,NUM,MAX
+
+   ! Criação das áreas:
+   ! Alma
+   AL, L11, L3, L14, L8
+   ! Mesa inferior
+   AL, L11, L2, L12, L7
+   ! Enrijecedor inferior
+   AL, L12, L1, L13, L6
+   ! Mesa superior
+   AL, L14, L4, L15, L9
+   ! Enrijecedor superior
+   AL, L15, L5, L16, L10
+
+*endif
+
+! Fatiar a barra nas bordas do furo
+SLICEYZ,xi,   yMin, zMin, yMax, zMax  ! TODO  deprecated, replace
+SLICEYZ,xf,   yMin, zMin, yMax, zMax  ! TODO  deprecated, replace
+SLICEYZ,hPos, yMin, zMin, yMax, zMax  ! TODO  deprecated, replace
+! Fatiar a barra na metade da altura
+SLICEXZ,yMid, xMin ,zMin, xMax, zMax  ! TODO  deprecated, replace
+! Criar componente com as áreas da barra
+CM,CM_BeamAreas,AREA
+
+! Criar área circular
+ASEL,U,AREA,,ALL
+! Mover o working plane
+WPOFFS,,,z0
+CYL4,x0+hPos,yMid,hDiam/2
+*get,ACirc,AREA,,NUM,MIN
+! Retornar o working plane para a posição original
+WPOFFS,,,-z0
+ALLSEL
+
+! Cortar barra com a área circular
+ASBA,CM_BeamAreas,ACirc,,DELETE,DELETE
+
+! Plotar todas as entidades
+ALLSEL
+GPLOT
+
+!! 3.3  MODELO DE ELEMENTOS FINITOS                                                               !!
+! Definir atributos da malha
+ALLSEL
+AATT,MAT_Steel,,TYPE_Plate,,SEC_Plate
+AESIZE,ALL,ElementSize
+
+! Criar malha
+AMESH,ALL
+
+! Salvar imagem
+/eshape,1
+EPLOT
+TAKEPIC,'Malha'
+/eshape,0
+
+
+
+!!                                                                                                !!
+!! 4. SOLUÇÃO                                                                                     !!
+!!                                                                                                !!
+/solu
+ALLSEL
+
+!! 4.1  APOIOS                                                                                    !!
+! Apoio esquerdo:
+! Selecionar nós da face
+NSEL,S,LOC,X,x0
+!NSEL,R,LOC,Z,z0
+CM,CMN_leftSup,NODE
+! Obter número do nó do meio da alma
+midNodeL=NODE(x0,y0+(dt/2),z0)
+! Criar acoplamento
+CERIG,midNodeL,ALL,ALL
+*if,leftSup,EQ,0,THEN
+   ! Apoiar o nó mestre
+   D,midNodeL,UX,0,,,,UY,UZ,ROTX
+*elseif,leftSup,EQ,1,THEN
+   ! Apoiar o nó mestre
+   D,midNodeL,ALL,0
+*endif
+
+! Apoio direito:
+! Selecionar nós da face
+NSEL,S,LOC,X,x0+L
+!NSEL,R,LOC,Z,z0
+CM,CMN_rightSup,NODE
+! Obter número do nó do meio da alma
+midNodeR=NODE(x0+L,y0+(dt/2),z0)
+! Criar acoplamento
+CERIG,midNodeR,ALL,ALL
+*if,rightSup,EQ,0,THEN
+   ! Apoiar o nó mestre
+   D,midNodeR,UY,0,,,,UZ,ROTX
+   !D,ALL,UY,0,,,,UZ,ROTX
+*elseif,rightSup,EQ,1,THEN
+   ! Apoiar o nó mestre
+   D,midNodeR,UY,0,,,,UZ,ROTX,ROTY,ROTZ
+   !D,ALL,UY,0,,,,UZ,ROTX,ROTY,ROTZ
+*endif
+
+!! 4.2  CARREGAMENTO                                                                              !!
+ALLSEL
+! Aplicar carga axial
+!NSEL,S,LOC,X,x0+L
+!*get,NodeCount,NODE,,COUNT
+!nodalLoad=xForce/NodeCount
+!F,ALL,FX,nodalLoad
+! Carga axial
+*if,xForce,NE,0,THEN
+   F,midNodeR,FX,xForce
+*endif
+! Carga uniformemente distribuída na mesa superior
+*if,yLoad,NE,0,THEN
+   ASEL,S,LOC,Y,y0+dt
+   NSLA,S
+   *get,NodeCount,NODE,,COUNT
+   pressureLoad=yLoad/bf
+   nodalLoad=pressureLoad/NodeCount
+   F,ALL,FY,-nodalLoad
+   ALLSEL
+*endif
+! Carga uniformemente distribuída na alma
+*if,zLoad,NE,0,THEN
+   ASEL,S,LOC,Z,z0
+   NSLA,S
+   *get,NodeCount,NODE,,COUNT
+   pressureLoad=zLoad/dt
+   nodalLoad=pressureLoad/NodeCount
+   F,ALL,FZ,-nodalLoad
+   ALLSEL
+*endif
+! Aceleração da gravidade
+*if,gDir,EQ,1,THEN
+   ACEL,gAcel
+*elseif,gDir,EQ,2,THEN
+   ACEL,,gAcel
+*elseif,gDir,EQ,3,THEN
+   ACEL,,,gAcel
+*elseif,gDir,EQ,0,THEN
+   ACEL,0,0,0
+*endif
+
+!! 4.3  IMPERFEIÇÕES GEOMÉTRICAS INICIAIS                                                         !!
+! Caso as imperfeições geométricas estejam ativas:
+*if,GeomImp,EQ,1,THEN
+
+   ! Primeira solução: análise estática com PSTRES
+   /solu
+   TBDELE,BISO,MAT_Steel
+   ALLSEL
+   PSTRES,ON
+   ANTYPE,0
+   SOLVE
+   FINISH
+
+   ! Pós-processo da análise estática
+   /post1
+   SET,FIRST
+
+   ! Segunda solução: análise de flambagem
+   /solu
+   ALLSEL
+   ANTYPE,1
+   BUCOPT,LANB,5,0,,RANGE
+   SOLVE
+
+   ! Pós-processo da análise de flambagem
+   /post1
+   SET,,1
+   VIEW4W
+   ! Foto da deformada (primeiro modo de flambagem)
+   /show
+   PLNSOL,U,Z,2
+   TAKEPIC,'Modo de flambagem',0
+   ALLSEL
+   ! Extrair o maior deslocamento em Z (em módulo)
+   *get,MaxDisp,PLNSOL,,MAX
+   *get,MinDisp,PLNSOL,,MIN
+   MinDisp=ABS(MinDisp)
+   MaxDisp=ABS(MaxDisp)
+   *if,MinDisp,GT,MaxDisp,THEN
+      MaxDisp=MinDisp
+   *endif
+
+   /prep7
+   ! Obter o nome do arquivo de solução
+   *get,FileName,ACTIVE,0,JOBNAM
+   ! Calcular o fator de importação da imperfeição geométrica
+   impFactor=impVal/MaxDisp
+   ! Importar imperfeição geométrica
+   UPGEOM,impFactor,1,1,FileName,RST
+   ! Redefinir material bilinear
+   TB,BISO,MAT_Steel,,2
+   TBDATA,,MAT_Steel_fy
+
+*endif
+
+!! 4.4  SOLUÇÃO DA ANÁLISE NÃO-LINEAR                                                             !!
+/solu
+ALLSEL
+! Análise estática
+ANTYPE,0
+! Teoria de grandes deslocamentos
+*if,largeDisp,EQ,0,THEN
+   NLGEOM,OFF
+*elseif,largeDisp,EQ,1,THEN
+   NLGEOM,ON
+*endif
+! Número de substeps
+NSUBST,SubstepCount,SubstepCount*2
+NCNV,2
+! Algoritmo de solução
+*if,solType,EQ,0,THEN
+   ARCLEN,OFF
+*elseif,solType,EQ,1,THEN
+   ARCLEN,ON,MaxArcMult,MinArcMult
+   ARCTRM,OFF
+*endif
+! Saída de resultados
+OUTRES,ERASE
+OUTRES,ALL,ALL
+SAVE,'PRESOLU',db,,ALL
+! Solucionar
+SOLVE
+
+
+
+!!                                                                                                !!
+!! 5. PÓS-PROCESSO                                                                                !!
+!!                                                                                                !!
+/post1
+! Escala da deformada determinada automaticamente
+ALLSEL
+/dscale,ALL,AUTO
+VIEW4W
+
+!! 5.1  DEFORMADA                                                                                 !!
+! Ler último substep que convergiu
+SET,LAST
+*get,Status,ACTIVE,,SOLU,CNVG
+*get,ThisSubstep,ACTIVE,,SET,SBST
+LastUnconverged=0
+*if,Status,EQ,0,OR,ThisSubstep,EQ,999999,THEN
+   SET,PREV
+   LastUnconverged=1
+*endif
+! Número do último load step
+*get,LSNum,ACTIVE,,SET,LSTP
+! Obter o número de substeps que convergiram
+*get,LastSubstep,ACTIVE,,SET,SBST
+! Obter o fator de carga do último substep que convergiu
+*get,LastLambda,ACTIVE,,SET,TIME
+! Obter fator de carga máximo
+Lambda=0
+*do,nthSub,1,LastSubstep
+   ! Ler substep
+   SET,LSNum,nthSub
+   ! Obter fator de carga do substep
+   *get,SubstepLoadFactor,ACTIVE,,SET,TIME
+   ! Atualizar o valor máximo do fator de carga
+   *if,SubstepLoadFactor,GT,Lambda,THEN
+      Lambda=SubstepLoadFactor
+      ! Salvar o número do substep de maior fator de carga
+      MaxLFacSubstep=nthSub
+   *endif
+*enddo
+! Plotar deformada
+PLDISP,2
+TAKEPIC,'Deformada'
+! Plotar tensões de von Mises
+PLNSOL,S,EQV
+TAKEPIC,'Von Mises'
+! Plotar deformações principais
+PLNSOL,EPPL,1
+TAKEPIC,'EPPL'
+
+!! 5.2  GRÁFICOS                                                                                  !!
+/post26
+VIEW1W
+! Definir cor da primeira curva do gráfico (azul)
+/color,CURVE,BLUE,1
+! Número máximo de variáveis
+NUMVAR,200
+! Definir intervalo a ser armazenado
+TIMERANGE,0,Lambda
+NSTORE,1
+! Definir variável: deslocamento em X do nó da face livre
+NSOL,2,midNodeR,U,X,DISP_X1
+! Variável em x: deslocamento do primeiro nó
+XVAR,2
+! Calcular limites do gráfico
+! Fator de carga
+*vlen,LastSubstep,1
+*del,LoadFactors
+*dim,LoadFactors,ARRAY,LastSubstep
+VGET,LoadFactors(1),1
+! Deslocamento em Y do primeiro nó
+*vlen,LastSubstep,1
+*del,FNode1_YDisp
+*dim,FNode1_YDisp,ARRAY,LastSubstep
+VGET,FNode1_YDisp(1),2
+*vlen
+! Plotar gráficos
+! Definir intervalo do eixo X
+*vscfun,GraphXMin,MIN,FNode1_YDisp
+*vscfun,GraphXMax,MAX,FNode1_YDisp
+/xrange,GraphXMin,GraphXMax
+! Definir intervalo do eixo Y
+*vscfun,GraphYMin,MIN,LoadFactors
+*vscfun,GraphYMax,MAX,LoadFactors
+/yrange,GraphYMin,GraphYMax
+! Variável em Y: fator de carga
+/show
+PLVAR,1
+TAKEPIC,'Carga x Deslocamento'
+
+! Tornar a exibir as tensões de von Mises
+/post1
+VIEW1W
+SET,,LastSubstep
+/dscale,,20
+PLNSOL,S,EQV,2
+
+
+
+
