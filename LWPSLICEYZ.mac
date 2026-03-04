@@ -1,0 +1,27 @@
+*msg,fatal
+FATAL ERROR: LWPSLICEYZ macro has been DEPRECATED.
+
+/eof
+
+! LWPSLICEYZ, x,
+! LWPSLICEYZ, arg1
+
+! Description:
+! Divides all selected lines at the working plane (positioned according to arg1=x)
+
+! Position working plane
+WPLANE,-1,arg1,,,arg1,,1,arg1,1,0
+
+! Hide working plane
+WPSTYL,,,,,,,,0
+
+! Divide lines
+LSBW,ALL,,DELETE
+
+! Reset working plane to original location
+WPCSYS,-1,0
+
+! Hide working plane
+WPSTYL,,,,,,,,0
+
+
