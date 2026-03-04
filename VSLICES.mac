@@ -1,0 +1,157 @@
+*msg,fatal
+FATAL ERROR: VSLICES macro has been DEPRECATED.
+
+/eof
+
+! VSLICES, xArray, yArray, zArray
+! VSLICES,   arg1,   arg2,   arg3
+
+! Description:
+! Slices selected volumes at given X, Y, and Z coordinates.
+
+! Arguments:
+! arg1: xArray  (STR)  -  name of array containing X slicing coordinates
+! arg2: yArray  (STR)  -  name of array containing Y slicing coordinates
+! arg3: zArray  (STR)  -  name of array containing Z slicing coordinates
+
+! Local parameters:
+! AR20: parmType
+! AR21: xSliceCount
+! AR22: ySliceCount
+! AR23: zSliceCount
+! AR24: COMPV_originalVolumes
+! AR25: VNextPrime
+! AR26: FLAG
+! AR27: VNum
+! AR28: nthX
+! AR29: x
+! AR30: validSlice
+! AR31: nthY
+! AR32: y
+! AR33: nthZ
+! AR34: z
+! AR35: maxVNum
+! AR36: compType
+
+! Global parameters (erased at the end on this subroutine):
+! VSLICES_VAR_xMin
+! VSLICES_VAR_yMin
+! VSLICES_VAR_zMin
+! VSLICES_VAR_xMax
+! VSLICES_VAR_yMax
+! VSLICES_VAR_zMax
+
+! Output parameters:
+! CONICALAR_COMPA_cone
+
+*get,AR20,PARM,%arg1%,TYPE
+*if,AR20,EQ,1,THEN
+    *get,AR21,PARM,%arg1%,DIM,X
+*else
+    AR21=0
+*endif
+
+*get,AR20,PARM,%arg2%,TYPE
+*if,AR20,EQ,1,THEN
+    *get,AR22,PARM,%arg2%,DIM,X
+*else
+    AR22=0
+*endif
+
+*get,AR20,PARM,%arg3%,TYPE
+*if,AR20,EQ,1,THEN
+    *get,AR23,PARM,%arg3%,DIM,X
+*else
+    AR23=0
+*endif
+
+!!
+*get,vmax,volu,,num,maxd
+numstr,volu,vmax+1
+!!
+
+CM,AR24,VOLU
+AR25=0
+AR26=1
+*dowhile,AR26
+    CMSEL,S,AR24
+    AR27=VLNEXT(AR25)
+    VSEL,S,VOLU,,AR27
+    VLIMS,'VSLICES_VAR_xMin','VSLICES_VAR_yMin','VSLICES_VAR_zMin','VSLICES_VAR_xMax','VSLICES_VAR_yMax','VSLICES_VAR_zMax'
+
+    !!
+    *msg,UI,AR27
+Working on volume %I
+    !!
+
+    AR30=0
+    *do,AR28,1,AR21,1
+        AR29=%arg1%(AR28)
+        *if,AR29,GT,VSLICES_VAR_xMin,AND,AR29,LT,VSLICES_VAR_xMax,THEN
+            AR30=1
+            *exit
+        *endif
+    *enddo
+
+    *if,AR30,EQ,0,THEN
+        *do,AR31,1,AR22,1
+            AR32=%arg2%(AR31)
+            *if,AR32,GT,VSLICES_VAR_yMin,AND,AR32,LT,VSLICES_VAR_yMax,THEN
+                AR30=2
+                *exit
+            *endif
+        *enddo
+
+        *if,AR30,EQ,0,THEN
+            *do,AR33,1,AR23,1
+                AR34=%arg3%(AR33)
+                *if,AR34,GT,VSLICES_VAR_zMin,AND,AR34,LT,VSLICES_VAR_zMax,THEN
+                    AR30=3
+                    *exit
+                *endif
+            *enddo
+
+        *endif
+
+    *endif
+
+    *if,AR30,EQ,0,THEN
+
+        CMSEL,S,AR24
+        *get,AR35,VOLU,,NUM,MAX
+        *if,AR27,EQ,AR35,THEN
+            AR26=0
+        *else
+            AR25=AR27
+        *endif
+
+    *else
+
+        *if,AR30,EQ,1,THEN
+            WPLANE,-1,AR29,,,AR29,,1,AR29,1,0
+        *elseif,AR30,EQ,2,THEN
+            WPLANE,-1,,AR32,,1,AR32,,,AR32,1
+        *elseif,AR30,EQ,3,THEN
+            WPLANE,-1,,,AR34,1,,AR34,,1,AR34
+        *endif
+        WPSTYL,,,,,,,,0
+        VSBW,AR27,,DELETE
+        WPCSYS,-1,0
+        WPSTYL,,,,,,,,0
+        *get,AR36,COMP,AR24,TYPE
+        *if,AR36,EQ,9,THEN
+            CMSEL,A,AR24
+        *endif
+        CM,AR24,VOLU
+        AR25=0
+
+    *endif
+
+*enddo
+
+*del,VSLICES_VAR_xMin
+*del,VSLICES_VAR_yMin
+*del,VSLICES_VAR_zMin
+*del,VSLICES_VAR_xMax
+*del,VSLICES_VAR_yMax
+*del,VSLICES_VAR_zMax
