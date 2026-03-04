@@ -1,0 +1,30 @@
+*msg,fatal
+FATAL ERROR: VWPSLICEXY macro has been DEPRECATED.
+
+/eof
+
+! VWPSLICEXY, z,
+! VWPSLICEXY, arg1
+
+! Description:
+! Divides all selected volumes by the working plane as positioned according to arg1 (z).
+
+! Local variables:
+! -
+
+! Position working plane
+WPLANE,-1,,,arg1,1,,arg1,,1,arg1
+
+! Hide working plane
+WPSTYL,,,,,,,,0
+
+! Divide volumes
+VSBW,ALL,,DELETE
+
+! Reset working plane to its original position
+WPCSYS,-1,0
+
+! Hide working plane
+WPSTYL,,,,,,,,0
+
+

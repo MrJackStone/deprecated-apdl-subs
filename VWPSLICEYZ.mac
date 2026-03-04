@@ -1,0 +1,29 @@
+*msg,fatal
+FATAL ERROR: VWPSLICEYZ macro has been DEPRECATED.
+
+/eof
+
+! VWPSLICEYZ, x,
+! VWPSLICEYZ, arg1
+
+! Descrição:
+! Divide todos os volumes selecionados pelo working plane posicionado de acordo com arg1 (x).
+
+! Lista de variáveis locais
+! -
+
+! Posicionar o working plane
+WPLANE,-1,arg1,,,arg1,,1,arg1,1,0
+
+! Ocultar working plane
+WPSTYL,,,,,,,,0
+
+! Dividir áreas
+VSBW,ALL,,DELETE
+
+! Trazer o working plane de volta à posição original
+WPCSYS,-1,0
+
+! Ocultar working plane
+WPSTYL,,,,,,,,0
+
