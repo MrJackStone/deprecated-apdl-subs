@@ -1,0 +1,220 @@
+*msg,fatal
+FATAL ERROR: SLICEXY macro has been DEPRECATED.
+
+/eof
+
+! SLICEXY, z,    xMin, yMin, xMax, yMax, KEEP
+! SLICEXY, arg1, arg2, arg3, arg4, arg5, arg6
+
+! Descrição:
+! Divide todas as áreas selecionadas por uma área retangular no plano XY
+! definida por dois vértices opostos.
+
+! Lista de variáveis locais
+! AR20: MaxKP
+! AR21: K1
+! AR22: K2
+! AR23: K3
+! AR24: K4
+! AR25: MaxLN
+! AR26: L1
+! AR27: L2
+! AR28: L3
+! AR29: L4
+! AR30: MaxAR
+! AR31: A1
+! AR32: PrevAreas
+! AR33: PrevCount
+! AR34: PostCount
+! AR35: KPREV
+! AR36: LPREV
+! AR37: APREV
+! AR38: ACount
+! AR39: KCount
+! AR40: K1
+! AR41: K2
+! AR42: K3
+! AR43: K4
+! AR44: K1x
+! AR45: K2x
+! AR46: K1y
+! AR47: K2y
+! AR48: K1z
+! AR49: K2z
+! AR50: nK1x
+! AR51: nK2x
+! AR52: nK1y
+! AR53: nK2y
+! AR54: nK1z
+! AR55: nK2z
+! AR56: K3x
+! AR57: K4x
+! AR58: K3y
+! AR59: K4y
+! AR60: K3z
+! AR61: K4z
+! AR62: nK3x
+! AR63: nK4x
+! AR64: nK3y
+! AR65: nK4y
+! AR66: nK3z
+! AR67: nK4z
+! AR68: check1
+! AR69: check2
+! AR70: check3
+! AR71: check4
+! AR72: check5
+! AR73: check6
+! AR74: checkSum
+
+! Desativar exibição automática
+/nopr
+IMMED,0
+/uis,REPLOT,0
+
+! Definir números dos keypoints dos vértices
+*get,AR20,KP,0,NUM,MAXD
+NUMSTR,KP,AR20+1
+AR21=AR20+1
+AR22=AR20+2
+AR23=AR20+3
+AR24=AR20+4
+! Criar keypoints dos cantos
+K,AR21,arg2,arg3,arg1
+K,AR22,arg2,arg5,arg1
+K,AR23,arg4,arg5,arg1
+K,AR24,arg4,arg3,arg1
+
+! Definir números das linhas das arestas
+*get,AR25,LINE,0,NUM,MAXD
+NUMSTR,LINE,AR25+1
+AR26=AR25+1
+AR27=AR25+2
+AR28=AR25+3
+AR29=AR25+4
+! Criar linhas das arestas
+L,AR21,AR22
+L,AR22,AR23
+L,AR23,AR24
+L,AR24,AR21
+
+! Criar componente de áreas prévias
+CM,AR32,AREA
+
+! Criar área de corte
+*get,AR30,AREA,0,NUM,MAXD
+NUMSTR,AREA,AR30+1
+AR31=AR30+1
+AL,AR26,AR27,AR28,AR29
+
+! Cortar áreas
+*if,arg6,EQ,1,THEN
+   ASBA,AR32,AR31,,DELETE,KEEP
+   ASEL,U,AREA,,AR31
+   CM,AR32,AREA
+   ASEL,A,AREA,,AR31
+   ASBA,AR31,AR32,,DELETE,KEEP
+*else
+   ASBA,AR32,AR31,,DELETE,DELETE
+*endif
+
+! Obter contagem posterior de entidades
+*get,AR34,AREA,0,COUNT
+
+! Salvar seleção atual
+CM,AR35,KP
+CM,AR36,LINE
+CM,AR37,AREA
+
+! Verificar se a área de corte original existe de forma inalterada
+*if,AR33,EQ,AR34,THEN
+   ASEL,S,AREA,,AR31
+   *get,AR38,AREA,0,COUNT
+   *if,AR38,EQ,1,THEN
+      LSLA,S
+      KSLL,S
+      *get,AR39,KP,0,COUNT
+      *if,AR39,EQ,4,THEN
+         AR40=KPNEXT(0)
+         AR41=KPNEXT(AR40)
+         AR42=KPNEXT(AR41)
+         AR43=KPNEXT(AR42)
+         *if,AR40,EQ,AR21,AND,AR41,EQ,AR22,THEN
+            AR44=KX(AR21)
+            AR45=KX(AR22)
+            AR46=KY(AR21)
+            AR47=KY(AR22)
+            AR48=KZ(AR21)
+            AR49=KZ(AR22)
+            AR50=KX(AR40)
+            AR51=KX(AR41)
+            AR52=KY(AR40)
+            AR53=KY(AR41)
+            AR54=KZ(AR40)
+            AR55=KZ(AR41)
+            *if,AR44,EQ,AR50,AND,AR46,EQ,AR52,THEN
+               AR68=1
+            *endif
+            *if,AR45,EQ,AR51,AND,AR47,EQ,AR53,THEN
+               AR69=2
+            *endif
+            *if,AR48,EQ,AR54,AND,AR49,EQ,AR55,THEN
+               AR70=4
+            *endif
+         *endif
+         *if,AR42,EQ,AR23,AND,AR43,EQ,AR24,THEN
+            AR56=KX(AR23)
+            AR57=KX(AR24)
+            AR58=KY(AR23)
+            AR59=KY(AR24)
+            AR60=KZ(AR23)
+            AR61=KZ(AR24)
+            AR62=KX(AR42)
+            AR63=KX(AR43)
+            AR64=KY(AR42)
+            AR65=KY(AR43)
+            AR66=KZ(AR42)
+            AR67=KZ(AR43)
+            *if,AR56,EQ,AR62,AND,AR58,EQ,AR64,THEN
+               AR71=8
+            *endif
+            *if,AR57,EQ,AR63,AND,AR59,EQ,AR65,THEN
+               AR72=16
+            *endif
+            *if,AR60,EQ,AR66,AND,AR61,EQ,AR67,THEN
+               AR73=32
+            *endif
+         *endif
+      *endif
+   *endif
+*endif
+
+! Retomar seleção
+CMSEL,S,AR35
+CMSEL,S,AR36
+CMSEL,S,AR37
+
+! Verificar soma
+AR74=AR68+AR69+AR70+AR71+AR72+AR73
+! Caso todos os critérios sejam atendidos:
+*if,AR74,EQ,63,THEN
+   ! Excluir área de corte
+   ASEL,S,AREA,,AR31
+   LSLA,S
+   KSLL,S
+   ADELE,ALL
+   LDELE,ALL
+   KDELE,ALL
+*endif
+
+! Retomar seleção
+CMSEL,S,AR35
+CMSEL,S,AR36
+CMSEL,S,AR37
+
+! Deletar componente de áreas prévias
+CMDELE,AR32
+CMDELE,AR35
+CMDELE,AR36
+CMDELE,AR37
+
